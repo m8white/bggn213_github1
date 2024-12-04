@@ -1,0 +1,171 @@
+---
+title: "Class 10 Structural Biochem and Alpha Fold"
+author: "Matthew White"
+format: pdf
+---
+
+
+
+
+```{r}
+pdbstats <- read.csv("Data Export Summary.csv", row.names = 1)
+pdbstats
+
+#pdbstats_numeric <- as.numeric(pdb_stats$c("X.ray", "EM", "NMR", "Total"))
+```
+
+```{r}
+x <- pdbstats$Total
+#Write function that can remove commas then make character into a numeric
+convert_comma_numbers <- function(x) {
+  #remove commas
+x <- gsub(",", "", x)
+
+x <- as.numeric(x)
+
+return(x)
+}
+
+convert_comma_numbers(x)
+```
+
+```{r}
+n.tot <- sum(convert_comma_numbers(pdbstats$Total))
+n.tot
+```
+
+>Alternative mode of loading data that does not require the conversion function
+
+```{r}
+#this readr package with read _ csv instead of .csv will read in values as numeric even with commas
+library(readr)
+pdbstats_numeric <- read_csv("Data Export Summary.csv")
+pdbstats_numeric
+
+```
+
+>Q1: What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy.
+
+```{r}
+sum(pdbstats_numeric$`X-ray`)/sum(pdbstats_numeric$Total)
+sum(pdbstats_numeric$EM)/sum(pdbstats_numeric$Total)
+
+```
+
+>Q2: What proportion of structures in the PDB are protein?
+
+```{r}
+pdbstats_numeric$Total
+195866/sum(pdbstats_numeric$Total)
+
+#library(dplyr)
+#pdbstats_numeric |>
+ # filter(`Molecular Type`=="Protein")
+
+
+
+```
+
+>Q3: Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+4,563 diff structures!
+
+
+##Using Mol*
+
+![My first image from Mol-star](1HSG.png)
+
+>Q4: Water molecules normally have 3 atoms. Why do we see just one atom per water molecule in this structure?
+
+The structure does not show hydrogen anywhere since it is smaller than the 2 Angstrom resolution of the group's protein structure.
+
+>Q5: There is a critical “conserved” water molecule in the binding site. Can you identify this water molecule? What residue number does this water molecule have
+
+this is water 308 in the structure. 
+
+![HIV inhibitor drug MK1 fit inside hsg protein](1HSGspacefill.png)
+
+![catalytic zone and stabilizing water 308](1HSG_Water_Asp25.png)
+
+
+## Bio3D package for structural Bioinformatics
+
+```{r}
+library(bio3d)
+
+pdb <- read.pdb("1hsg")
+pdb
+```
+
+```{r}
+attributes(pdb)
+
+```
+
+```{r}
+head(pdb$atom)
+```
+
+```{r}
+pdbseq(pdb)[25]
+```
+
+>Q7: How many amino acid residues are there in this pdb object? 
+
+198
+
+>Q8: Name one of the two non-protein residues? 
+
+HOH and MK1
+>Q9: How many protein chains are in this structure? 
+
+2
+
+```{r}
+length(pdbseq(pdb))
+
+```
+
+##Functional dynamics prediction
+
+```{r}
+adk <- read.pdb("6s36")
+summary(adk)
+```
+
+```{r}
+source("https://tinyurl.com/viewpdb")
+library(r3dmol)
+
+#view.pdb(pdb, backgroundColor = "yellow")
+```
+
+
+```{r}
+#Tells fluctuation
+modes <- nma(adk)
+plot(modes)
+```
+
+
+```{r}
+#The 3 lines of code that give us trajectory file that can view in Mol-star to show flexibility of protein structure. 
+
+adk <- read.pdb("6s36")
+modes <- nma(adk)
+mktrj(modes, file = "adk.pdb")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

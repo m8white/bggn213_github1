@@ -1,0 +1,166 @@
+---
+title: "Class 7: Machine Learning 1"
+author: "Matthew White"
+format: pdf
+---
+
+Before we get into clustering methods lets make up some sample data to cluster in which we know what the answer should be.
+
+To help with this, use the `rnorm()` function.
+
+```{r}
+#combine plots of two different random sets of values clustered around a set mean by vectorizing the rnorm values within hist() plot
+hist(c(rnorm(150000, mean=-3), rnorm(150000, 3)))
+```
+
+```{r}
+n=30
+x <- c(rnorm(n, mean=-3), rnorm(n, 3))
+x
+#to build up our second sample data cluster, could either rewrite the above code but flipped, or we can just reverse "x" that we already built
+y <- rev(x)
+y
+#cbind will combine columns of two different vectors/matrices/data frames. basically making the x and y data values into one singular dataset. 
+z <- cbind(x,y)
+z
+plot(z)
+```
+
+##K-means clustering
+
+The function in base R for k-means clustering is called `kmeans()`
+
+```{r}
+km <- kmeans(z, centers = 2)
+km
+```
+
+```{r}
+km$centers
+```
+
+> Q: Print out the cluster membership vector (i.e. our main answer)
+
+```{r}
+km$cluster
+
+```
+
+Plot of data with the clustering result
+
+```{r}
+plot(z, col = km$cluster)
+points(km$centers, col = "blue", pch = 15, cex = 2)
+```
+
+> Can you cluster our data in `z` into four clusters?
+
+```{r}
+km4 <- kmeans(z, 4)
+km4
+plot(z, col = km4$cluster)
+points(km4$centers, col = "blue", pch = 15, cex = 2)
+
+##must be careful with kmeans clustering, as it will return what you ask for. You can force data with clearly 2 clusters into trying to show 4 distinct clusters. 
+
+```
+
+
+## Hierarchical Clustering
+
+The main function for hierarchical clustering in base R is call `hclust()`
+
+Unlike `kmeans()` I can not just pass in my data as input. I first need a distance matrix from my data. 
+
+```{r}
+d <- dist(z)
+hc <- hclust(d)
+hc
+```
+
+There is a specific hclust plot() method
+```{r}
+plot(hc)
+#To get main clustering result (membership vector), give a height at which to cut the tree and what falls together is a cluster.  To do so we can use `cutree()` 
+abline(h=10, col = "red")
+```
+
+```{r}
+grps <- cutree(hc, h =10)
+grps
+plot(z, col = grps)
+```
+
+#Principal Component Analysis
+
+##PCA of UK food data
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+#reading dataset with `row.names = 1` argument to not conisder row names as a column value
+x <- read.csv(url, row.names = 1)
+dim(x)
+head(x)
+tail(x)
+
+
+```
+
+Now some plots of our data (not very useful ones for visualization)
+```{r}
+barplot(as.matrix(x), beside = T, col = rainbow(nrow(x)))
+#beside argument can change to stacked bars. default is False
+barplot(as.matrix(x), beside = F, col = rainbow(nrow(x)))
+```
+
+##PCA to the rescue
+
+The main function to do PCA in base R is called `prcomp()`. 
+
+Note that I need to take the transpose of this particular data because that is what `prcomp()` help page was asking for
+
+```{r}
+x
+#get transposed version of x data frame with t() function
+t(x)
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+Lets see what is inside our result object `pca` that we just calculated
+
+```{r}
+attributes(pca)
+```
+
+```{r}
+pca$x
+```
+
+To make our main result figure, called a "PC plot" or "score plot, or "ordination plot" or "PC1 vs PC2 plot". 
+
+```{r}
+plot(pca$x[,1], pca$x[,2], col=c("black", "red", "blue", "darkgreen"), 
+     pch=16,
+     xlab = "PC1 (67.4%)", ylab = "PC2 (29%)"
+     )
+#now understand why had to transpose the dataset. we can see a point for each of the countries since they are rows now rather than columns.
+```
+
+##Variable Loadings plot
+
+Can give us insight into how the original variables, in this case the foods, contribute to our new PC axis
+```{r}
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+```
+
+```{r}
+pca$rotation
+
+```
+
+
+
+
+

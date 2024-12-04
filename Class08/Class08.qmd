@@ -1,0 +1,274 @@
+---
+title: "Class 8 mini-project"
+author: "Matthew White"
+format: pdf
+---
+
+```{r}
+head(mtcars)
+
+```
+
+Let's look at the mean value of every column:
+
+```{r}
+apply(mtcars, 2, mean)
+```
+
+Let's look at "spread" via standard deviation `sd()`
+
+```{r}
+apply(mtcars, 2, sd)
+```
+
+```{r}
+pca <- prcomp(mtcars)
+biplot(pca)
+```
+
+Let's try scaling this data
+
+```{r}
+mtscale <- scale(mtcars)
+head(mtscale)
+mean(mtscale)
+sd(mtscale)
+round(apply(mtscale, 2, mean))
+round(apply(mtscale, 2, sd))
+```
+
+Let's plot
+
+```{r}
+library(ggplot2)
+
+# disp v mpg for og and for scale dataset
+ggplot(mtcars) + aes(mpg, disp) + geom_point()
+ggplot(mtscale, aes(mpg,disp)) + geom_point()
+```
+
+```{r}
+pca2 <- prcomp(mtscale)
+biplot(pca2)
+#can achieve same thing by setting scale argument to TRUE in prcomp() function on og dataset
+pca3 <- prcomp(mtcars, scale = T)
+biplot(pca3)
+```
+
+##Mini Project Start
+
+```{r}
+#row.names=1 tells to use the 1st column as the row names
+wisc.df <- read.csv("WisconsinCancer.csv", row.names=1)
+head(wisc.df)
+dim(wisc.df)
+wisc.data <- wisc.df[,-1]
+head(wisc.data)
+```
+
+```{r}
+diagnosis <- wisc.df$diagnosis
+head(diagnosis)
+#make diagnosis data a factor so that it is understood as a categorical and not a continuous variable
+diagnosis_f <- as.factor(diagnosis)
+diagnosis_f
+```
+
+##Questions 1-3
+
+```{r}
+#Q1 and Q2
+dim(wisc.data)
+table(diagnosis_f)
+#Q3, how many variables in the data are suffixed with _mean?
+grep("_mean", colnames(wisc.data))
+grep("_mean", colnames(diagnosis_f))
+length(grep("_mean", colnames(wisc.data)))
+```
+
+##PCA portion, Q4-6
+
+Should scale our data in the PCA function!
+```{r}
+#colMeans(wisc.data)
+#apply(wisc.data,2,sd)
+
+wisc.pr <- prcomp(wisc.data, scale = T)
+x <- summary(wisc.pr)
+x
+##PCs are doing alright, but we still don't capture all variance in first couple PCs. 
+
+#Q4:  Captured 44% of variance in PC1
+#Q5:  Require 3 PCs to capture at least 70% of og data variance
+#Q6: Require 7 PCs to capture 90% variance
+
+#can also plot this summary
+plot(x$importance[2,], typ="b")
+
+```
+
+##Interpreting PCA results
+
+```{r}
+biplot(wisc.pr)
+
+#Q7: plot looks pretty shite. overcrowded, can't visualize any labels or results. 
+
+```
+
+```{r}
+#x is the coordinates of the patient on new PC plot. The value in each PC for each individual in the wisconsin dataset
+head(wisc.pr$x)
+```
+
+```{r}
+#colored by diagnosis to assess if there is any difference in malignant and benign samples.
+plot(wisc.pr$x, col = diagnosis_f, xlab = "PC1", ylab = "PC2")
+plot(wisc.pr$x[,1:3], col = diagnosis_f, xlab = "PC1", ylab = "PC3")
+```
+
+Now make a nicer ggplot version of the above
+
+```{r}
+df <- as.data.frame(wisc.pr$x)
+
+ggplot(df, aes(PC1, PC2, col = diagnosis_f)) + geom_point()
+
+```
+
+Now we can look at the proportion of variance explained by each principal component. 
+
+```{r}
+#Variance of each component
+pr.var <- wisc.pr$sdev^2
+head(pr.var)
+
+#variance explained by each principal component
+pve <- pr.var/sum(pr.var)
+head(pve)
+
+plot(pve, xlab ="Principal Component", ylab = "Proportion of Variance Explained", ylim = c(0,1), type = "o")
+
+#scree plot of the same data
+barplot(pve, ylab = "Precent of Variance Explained",
+     names.arg=paste0("PC",1:length(pve)), las=2, axes = FALSE)
+axis(2, at=pve, labels=round(pve,2)*100)
+
+#factoextra makes prettier plot
+library(factoextra)
+fviz_eig(wisc.pr, addlabels = TRUE)
+```
+
+##Communicating PCA Results
+
+```{r}
+#NOW, we are seeing how to look at variation (rotation of PC) explained by each variable (here looking at concave.points_mean). Number further from 0 indicates more contribution to variation 
+wisc.pr$rotation["concave.points_mean", 1]
+
+loadings <- wisc.pr$rotation
+ggplot(loadings) + aes(abs(PC1), reorder(rownames(loadings), -PC1)) + geom_col()
+
+```
+
+```{r}
+data.scaled <- scale(wisc.data)
+data.dist <- dist(data.scaled)
+wisc.hclust <- hclust(data.dist, method = "complete")
+
+#Q10
+plot(wisc.hclust)
+abline(h = 19, col = "red", lty = 2)
+
+#or
+
+wisc.hclust.clusters <- cutree(wisc.hclust, k = 4)
+table(wisc.hclust.clusters, diagnosis_f)
+
+#Q11
+wisc.hclust.clusters <- cutree(wisc.hclust, k = 5)
+table(wisc.hclust.clusters, diagnosis_f)
+
+```
+
+
+##K-means clustering
+```{r}
+km <- kmeans(wisc.data, centers =2)
+table(km$cluster)
+```
+
+##Hierarchical Clustering
+```{r}
+d <- dist(wisc.data)
+hc <- hclust(d)
+plot(hc)
+```
+
+
+```{r}
+grps <- cutree(hc, k=3)
+table(grps)
+```
+
+##Cluster in PC space
+
+In other words, use my PCA results as the basis for clustering
+
+```{r}
+#what is used to make older PCA plot
+#wisc.pr$x
+
+#make distance vector out of this in order to cluster hierarchically
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "ward.D2")
+plot(hc)
+```
+
+```{r}
+#Cut this tree to yield 2 groups/clusters (the benign and malignant groups)
+
+grps <- cutree(hc, k=2)
+table(grps)
+```
+
+Compare to my expert M and B `diagnosis_f`
+```{r}
+table(diagnosis_f)
+
+table(diagnosis_f, grps)
+```
+
+
+```{r}
+#Q12
+
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "ward.D2")
+plot(hc)
+
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "single")
+plot(hc)
+
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "complete")
+plot(hc)
+
+d <- dist(wisc.pr$x[,1:3])
+hc <- hclust(d, method = "average")
+plot(hc)
+
+#The ward.D2 method produces the dendrogram with highest crossbars and most easy to see two major clusters (which is good since we have two patient groups).  
+
+#However, the complete method also lets us see that breaking into more clusters can provide a good readout of variation between B and M individuals (i.e. see that 4 clusters is a good choice)
+```
+
+
+
+
+
+
+
+
+
+

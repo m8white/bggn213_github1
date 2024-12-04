@@ -1,0 +1,137 @@
+---
+title: "Matt White - Class 6 project"
+format: pdf
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this 
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+My first function ! 
+
+```{r}
+add <- function(x, y) { 
+  x + y
+}
+
+add(x = 13, y = 71)
+add(13, 71)
+```
+```{r}
+add(5, 54)
+add(c(100,1,100),1)
+
+```
+Make a function "generate_DNA()" that makes a random nucleotide sequence of any length. 
+
+```{r}
+#generate_DNA <- function(  ) { } 
+
+
+generate_DNA <- function(length) {
+  bases <- c("A", "C", "G", "T")
+  sequence <- sample(bases, size = length, replace = T)
+  return(sequence)
+}
+
+generate_DNA(20)
+```
+
+The emblem :: will give us just one element from the bio3d package
+
+```{r}
+bio3d::aa.table
+
+#Only want to access aa1 column
+
+bio3d::aa.table$aa1
+```
+
+
+```{r}
+#get one entry per amino acid
+
+unique(bio3d::aa.table$aa1)[1:20]
+```
+
+Now write a function that generates protein sequence of any length
+```{r}
+generate_protein <- function(length) {
+  amino_acids <- unique(bio3d::aa.table$aa1)[1:20]
+  sequence <- sample(amino_acids, size = length, replace = T)
+  return(sequence)
+}
+
+generate_protein(20)
+```
+
+Generate a set of random protein sequences of incremental length 6 to 13
+
+Could do ``generate_protein(6)``, ``generate_protein(7)``, etc..
+
+Or we can use a different useful function, ``apply()`` or ``sapply()``
+
+
+```{r}
+
+sapply(6:12, generate_protein)
+
+```
+
+```{r}
+
+```
+
+
+Get this function to paste with no spaces, in format we could put into blast
+```{r}
+generate_protein <- function(length) {
+  amino_acids <- unique(bio3d::aa.table$aa1)[1:20]
+  sequence <- sample(amino_acids, size = length, replace = T)
+  sequence <- paste(sequence, collapse = "") 
+  #paste with the specification of "" for collapse will provide our sequence with no spaces between amino acids
+  
+  return(sequence)  
+  #good practice to tell what our code is returning
+}
+
+answer <- sapply(6:12, generate_protein) #apply our function over lengths of 6 to 12 amino acids
+answer
+```
+
+Format the values as fasta
+```{r}
+cat(paste(">id.", 6:12, "\n", answer, sep = ""), sep = "\n")   
+#"\n" is a return carriage, gives us a new line
+```
+
+```{r}
+v <- c("a", "b", "C")
+
+paste(v, sep ="/")
+paste(v, collapse = "")
+paste(">id.", 6:12, "\n", answer, sep = "")
+```
+
+```{r}
+cat(c("a", "\nb"), sep = "")
+```
+
+

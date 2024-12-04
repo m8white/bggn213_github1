@@ -1,0 +1,96 @@
+---
+title: "Class 11, finishing class 10 lab"
+author: "Matthew White"
+format: pdf
+---
+
+Today, before delving into structure prediction with AlphaFold we will finish our previous lab10
+
+```{r}
+library(bio3d)
+
+#saving this protein accession number as id. rest of workflow could work in the future for any protein of interest. thinking ahead!
+id <- "1ake_A"
+
+aa <- get.seq(id)
+aa
+```
+
+```{r}
+#blasting the ncbi server
+b <- blast.pdb(aa)
+```
+
+```{r}
+#alternative to looking at help page, can look at attributes to try understanding what previous function did. 
+attributes(b)
+```
+
+```{r}
+head(b$hit.tbl)
+```
+
+```{r}
+#shows the values from blast search for every result on hit list (each dot is a diff gene/protein hit)
+hits <- plot(b)
+```
+
+```{r}
+#remember attributes() function tells us what is inside a list/vector/data frame/etc
+#Can use these attribute names to find what is inside each specific component in the list
+attributes(hits)
+```
+
+Show top hits from our blast results
+```{r}
+hits$pdb.id
+```
+
+```{r}
+#Get the pdbid hits, put them in a subfolder (path) called pdbs, and turn it to zip file so not massive
+files <- get.pdb(hits$pdb.id, path = "pdbs", split=TRUE, gzip=TRUE)
+```
+
+
+> Go to MolStar.org/viewer, where we can open one of these pdb files and look at the hits related to 1AKE_A
+
+I have now downloaded all ADK structures in the PDB database but viewing them is difficult as they need to be aligned and super-imposed (i.e. visualized on top of one another rather than in separate windows.)
+
+I am going to install BiocManager package from CRAN (in the R brain/console)
+Then I can use `Biocmanager::install()` to install any bioconductor package.
+
+```{r}
+pdbs <- pdbaln(files, fit = TRUE, exefile = "msa")
+```
+
+
+```{r}
+pdbs
+```
+
+
+```{r}
+pc <- pca(pdbs)
+plot(pc)
+```
+
+>Is there a limit on how many variables can be inside one PC dimension? Why not have all variation described in two dimensions? 
+
+```{r}
+plot(pc, pc.axes = c(1:2))
+```
+
+To examine in more detail what PC1 (or any PC) is capturing here, we can plot the "loadings" or make a small movie (trajectory, `mktrj`) of moving along PC1. 
+
+```{r}
+mktrj(pc, pc=1, file ="pc1.pdb")
+```
+
+
+```{r}
+#loadings(pca) does not work here, not prcomp function that generated our pca
+```
+
+> after take amount each variable contributes to PC1, do we toss the highest contributing variables when looking at PC2? what threshold? Or else why would the same variables not contribute highest to PC2, still have highest variation.. 
+
+
